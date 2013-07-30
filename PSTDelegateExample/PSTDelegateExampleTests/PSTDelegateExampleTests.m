@@ -18,6 +18,17 @@
 }
 @end
 
+@protocol ExtendedDelegate <PSTExampleDelegate>
+
+@optional
+
+- (void)testCall;
+
+@end
+
+@interface ExtendedDelegateImpl : NSObject <ExtendedDelegate> @end
+@implementation ExtendedDelegateImpl @end
+
 @implementation PSTDelegateExampleTests
 
 - (void)testDelegateBeingCalled {
@@ -92,6 +103,21 @@
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
     [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
+}
+
+- (void)testDerivedProcols {
+    PSTDelegateProxy *delegateProxy;
+    @autoreleasepool {
+        ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl];
+    }
+
+    // At this stage, delegate must be nil
+    XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
+
+
+    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

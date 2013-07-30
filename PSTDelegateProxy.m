@@ -107,22 +107,8 @@ static volatile CFDictionaryRef _cache = nil;
         // We need to cache method signatures for each protocol.
         unsigned int protocolCount = 0;
         Protocol *__unsafe_unretained* protocols = class_copyProtocolList([object class], &protocolCount);
-        for (NSUInteger protocolIndex = 0; protocolIndex < protocolCount; protocolIndex++) {
-            Protocol *protocol = protocols[protocolIndex];
-            if (!CFDictionaryGetValueIfPresent(newSignatureCache, (__bridge const void *)(protocol), NULL)) {
-                // Set protocol to be cached.
-                CFDictionarySetValue(newSignatureCache, (__bridge const void *)(protocol), kCFBooleanTrue);
-
-                // Get the required method signatures.
-                NSUInteger methodCount;
-                struct objc_method_description *descriptions = protocol_copyMethodDescriptionList(protocol, NO, YES, &methodCount);
-                for (NSUInteger methodIndex = 0; methodIndex < methodCount; methodIndex++) {
-                    struct objc_method_description description = descriptions[methodIndex];
-                    NSMethodSignature *signature = [object methodSignatureForSelector:description.name];
-                    CFDictionarySetValue(newSignatureCache, description.name, (__bridge const void *)(signature));
-                }
-                free(descriptions);
-            }
+        for (NSUInteger idx = 0; idx < protocolCount; idx++) {
+            [self cacheProtocol:protocols[idx] object:object cache:newSignatureCache];
         }
         free(protocols);
     }while ((objectClass = class_getSuperclass(objectClass)));
@@ -133,6 +119,31 @@ static volatile CFDictionaryRef _cache = nil;
     if (oldSignatureCache) CFRelease(oldSignatureCache);
 
     OSSpinLockUnlock(&_lock);
+}
+
+- (void)cacheProtocol:(Protocol *)protocol object:(id)object cache:(CFMutableDictionaryRef)cache {
+    if (!CFDictionaryGetValueIfPresent(cache, (__bridge const void *)(protocol), NULL)) {
+        // Set protocol to be cached.
+        CFDictionarySetValue(cache, (__bridge const void *)(protocol), kCFBooleanTrue);
+
+        // Get the required method signatures.
+        NSUInteger methodCount;
+        struct objc_method_description *descriptions = protocol_copyMethodDescriptionList(protocol, NO, YES, &methodCount);
+        for (NSUInteger methodIndex = 0; methodIndex < methodCount; methodIndex++) {
+            struct objc_method_description description = descriptions[methodIndex];
+            NSMethodSignature *signature = [object methodSignatureForSelector:description.name];
+            CFDictionarySetValue(cache, description.name, (__bridge const void *)(signature));
+        }
+        free(descriptions);
+
+        // There might be sub-protocols we need to catch as well...
+        unsigned int inheritedProtocolCount;
+        Protocol *__unsafe_unretained* subprotocols = protocol_copyProtocolList(protocol, &inheritedProtocolCount);
+        for (NSUInteger idx = 0; idx < inheritedProtocolCount; idx++) {
+            [self cacheProtocol:subprotocols[idx] object:object cache:cache];
+        }
+        free(subprotocols);
+    }
 }
 
 @end
