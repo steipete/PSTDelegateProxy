@@ -22,17 +22,30 @@
 // THE SOFTWARE.
 
 #import "PSTDelegateProxy.h"
+#import <objc/runtime.h>
+#import <libkern/OSAtomic.h>
 
 @interface PSTYESDelegateProxy : PSTDelegateProxy @end
 
 @implementation PSTDelegateProxy
 
+static OSSpinLock _lock = OS_SPINLOCK_INIT;
+static volatile CFDictionaryRef _cache = nil;
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - NSObject
 
 - (id)initWithDelegate:(id)delegate {
+    if (!delegate) return nil; // Exit early if delegate is nil.
     if (self) {
         _delegate = delegate;
+
+        // Ensure we cached all method signatures.
+        OSSpinLockLock(&_lock);
+        if (!_cache || !CFDictionaryGetValueIfPresent(_cache, (__bridge const void *)([delegate class]), NULL)) {
+            [self cacheMethodSignaturesForProtocolsInObject:delegate];
+        }
+        OSSpinLockUnlock(&_lock);
     }
     return self;
 }
@@ -52,7 +65,12 @@
 
 // Required for delegates that don't implement certain methods.
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
-    return [self.delegate methodSignatureForSelector:sel];
+    NSMethodSignature *signature = [self.delegate methodSignatureForSelector:sel];
+    if (!signature) {
+        // If the delegate is already nil, we still need the method signature to not crash.
+        signature = CFDictionaryGetValue(_cache, sel);
+    }
+    return signature;
 }
 
 - (void)forwardInvocation:(NSInvocation *)invocation {
@@ -64,6 +82,47 @@
 
 - (instancetype)YESDefault {
     return [[PSTYESDelegateProxy alloc] initWithDelegate:self.delegate];
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - Private
+
+// This method assumes we're already locked.
+- (void)cacheMethodSignaturesForProtocolsInObject:(id)object {
+    // Copy the signature cache to be mutable.
+    CFMutableDictionaryRef newSignatureCache = nil;
+    if (_cache) newSignatureCache = CFDictionaryCreateMutableCopy(NULL, 0, _cache);
+    else        newSignatureCache = CFDictionaryCreateMutable(NULL, 0, NULL, &kCFTypeDictionaryValueCallBacks);
+
+    // Set this class to be cached.
+    CFDictionarySetValue(newSignatureCache, (__bridge const void *)([object class]), kCFBooleanTrue);
+
+    // We need to cache method signatures for each protocol.
+    unsigned int protocolCount = 0;
+    Protocol *__unsafe_unretained* protocols = class_copyProtocolList([object class], &protocolCount);
+    for (NSUInteger protocolIndex = 0; protocolIndex < protocolCount; protocolIndex++) {
+        Protocol *protocol = protocols[protocolIndex];
+        if (!CFDictionaryGetValueIfPresent(newSignatureCache, (__bridge const void *)(protocol), NULL)) {
+            // Set protocol to be cached.
+            CFDictionarySetValue(newSignatureCache, (__bridge const void *)(protocol), kCFBooleanTrue);
+
+            // Get the required method signatures.
+            NSUInteger methodCount;
+            struct objc_method_description *descriptions = protocol_copyMethodDescriptionList(protocol, NO, YES, &methodCount);
+            for (NSUInteger methodIndex = 0; methodIndex < methodCount; methodIndex++) {
+                struct objc_method_description description = descriptions[methodIndex];
+                NSMethodSignature *signature = [object methodSignatureForSelector:description.name];
+                CFDictionarySetValue(newSignatureCache, description.name, (__bridge const void *)(signature));
+            }
+            free(descriptions);
+        }
+    }
+    free(protocols);
+
+    // Save new signature cache.
+    CFDictionaryRef oldSignatureCache = _cache;
+    _cache = newSignatureCache;
+    if (oldSignatureCache) CFRelease(oldSignatureCache);
 }
 
 @end

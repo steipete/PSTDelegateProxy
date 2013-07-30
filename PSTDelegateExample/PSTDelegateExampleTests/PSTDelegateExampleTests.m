@@ -10,6 +10,9 @@
 #import "../PSTDelegateExample/PSTExampleDelegate.h"
 #import "../../PSTDelegateProxy.h"
 
+@interface TestDelegate : NSObject<PSTExampleDelegate> @end
+@implementation TestDelegate @end
+
 @interface PSTDelegateExampleTests : XCTestCase <PSTExampleDelegate> {
     NSString *_delegateString;
 }
@@ -46,6 +49,17 @@
     PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self];
     XCTAssertTrue([delegateProxy respondsToSelector:@selector(exampleDelegateCalledWithString:)], @"Must be true.");
     XCTAssertFalse([delegateProxy respondsToSelector:@selector(exampleDelegateThatReturnsBOOL)], @"Must be false.");
+}
+
+- (void)testThatProxyCanDealWithNilledOutDelegates {
+    PSTDelegateProxy *delegateProxy;
+    @autoreleasepool {
+        TestDelegate *delegate = [TestDelegate new];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate];
+    }
+    // At this stage, delegate must be nil
+    XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
+    [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
