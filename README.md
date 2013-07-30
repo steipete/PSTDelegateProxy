@@ -19,7 +19,7 @@ What we really want is something like this:
     [self.delegateProxy resizableViewDidBeginEditing:self];
 ```
 
-Read more on my blog: [http://petersteinberger.com](http://petersteinberger.com)
+Read more on my blog: [Smart Proxy Delegation](http://petersteinberger.com/blog/2013/smart-proxy-delegation/)
 
 
 License
