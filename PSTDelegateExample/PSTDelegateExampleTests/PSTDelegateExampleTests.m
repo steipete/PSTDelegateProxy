@@ -120,6 +120,23 @@
     XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
+- (void)testProperty {
+    PSTDelegateProxy *delegateProxy;
+    @autoreleasepool {
+        ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl];
+
+        [(id<PSTExampleDelegate>)delegateProxy delegateProperty];
+    }
+
+    // At this stage, delegate must be nil
+    XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
+
+    // Properties are covered with querying protocol_copyMethodDescriptionList.
+    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    XCTAssertTrue(returnValueTrue, @"return should be true");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - PSTExampleDelegate
 

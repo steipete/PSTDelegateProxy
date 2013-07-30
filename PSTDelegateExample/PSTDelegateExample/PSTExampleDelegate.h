@@ -18,4 +18,6 @@
 
 - (BOOL)exampleDelegateThatReturnsBOOLAndIsImplemented;
 
+@property (nonatomic, assign, readonly) BOOL delegateProperty;
+
 @end
