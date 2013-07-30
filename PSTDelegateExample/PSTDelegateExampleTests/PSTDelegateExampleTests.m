@@ -62,6 +62,24 @@
     [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
 }
 
+- (void)testThatProxyCanDealWithNilledOutDelegatesAndReturnValues {
+    PSTDelegateProxy *delegateProxy;
+    @autoreleasepool {
+        TestDelegate *delegate = [TestDelegate new];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate];
+    }
+    // At this stage, delegate must be nil
+    XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
+
+    // check that we still return false here.
+    BOOL returnValue = [(id<PSTExampleDelegate>)delegateProxy exampleDelegateThatReturnsBOOL];
+    XCTAssertFalse(returnValue, @"return should be false");
+
+    // Most important test, chec that this defaults to YES.
+    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    XCTAssertTrue(returnValueTrue, @"return should be true");
+}
+
 // Ensure caching works.
 - (void)testThatProxyCanDealWithNilledOutDelegatesCached {
     [self testThatProxyCanDealWithNilledOutDelegates];

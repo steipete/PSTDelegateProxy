@@ -35,7 +35,11 @@ static volatile CFDictionaryRef _cache = nil;
 #pragma mark - NSObject
 
 - (id)initWithDelegate:(id)delegate {
-    if (!delegate) return nil; // Exit early if delegate is nil.
+    return [self initWithDelegate:delegate forceCreation:NO];
+}
+
+- (id)initWithDelegate:(id)delegate forceCreation:(BOOL)forceCreation {
+    if (!delegate && !forceCreation) return nil; // Exit early if delegate is nil.
     if (self) {
         _delegate = delegate;
 
@@ -78,7 +82,9 @@ static volatile CFDictionaryRef _cache = nil;
 #pragma mark - Public
 
 - (instancetype)YESDefault {
-    return [[PSTYESDefaultingDelegateProxy alloc] initWithDelegate:self.delegate];
+    // When we create a proxy delegate with a different return type, we need to force creation.
+    // Else we would return NO in the end.
+    return [[PSTYESDefaultingDelegateProxy alloc] initWithDelegate:self.delegate forceCreation:YES];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +128,7 @@ static volatile CFDictionaryRef _cache = nil;
     CFDictionaryRef oldSignatureCache = _cache;
     _cache = newSignatureCache;
     if (oldSignatureCache) CFRelease(oldSignatureCache);
-    
+
     OSSpinLockUnlock(&_lock);
 }
 
