@@ -25,11 +25,10 @@
 #import <objc/runtime.h>
 #import <libkern/OSAtomic.h>
 
-@interface PSTYESDelegateProxy : PSTDelegateProxy @end
+@interface PSTYESDefaultingDelegateProxy : PSTDelegateProxy @end
 
 @implementation PSTDelegateProxy
 
-static OSSpinLock _lock = OS_SPINLOCK_INIT;
 static volatile CFDictionaryRef _cache = nil;
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -41,11 +40,9 @@ static volatile CFDictionaryRef _cache = nil;
         _delegate = delegate;
 
         // Ensure we cached all method signatures.
-        OSSpinLockLock(&_lock);
         if (!_cache || !CFDictionaryGetValueIfPresent(_cache, (__bridge const void *)([delegate class]), NULL)) {
             [self cacheMethodSignaturesForProtocolsInObject:delegate];
         }
-        OSSpinLockUnlock(&_lock);
     }
     return self;
 }
@@ -81,14 +78,16 @@ static volatile CFDictionaryRef _cache = nil;
 #pragma mark - Public
 
 - (instancetype)YESDefault {
-    return [[PSTYESDelegateProxy alloc] initWithDelegate:self.delegate];
+    return [[PSTYESDefaultingDelegateProxy alloc] initWithDelegate:self.delegate];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Private
 
-// This method assumes we're already locked.
 - (void)cacheMethodSignaturesForProtocolsInObject:(id)object {
+    static OSSpinLock _lock = OS_SPINLOCK_INIT;
+    OSSpinLockLock(&_lock);
+
     // Copy the signature cache to be mutable.
     CFMutableDictionaryRef newSignatureCache = nil;
     if (_cache) newSignatureCache = CFDictionaryCreateMutableCopy(NULL, 0, _cache);
@@ -123,6 +122,8 @@ static volatile CFDictionaryRef _cache = nil;
     CFDictionaryRef oldSignatureCache = _cache;
     _cache = newSignatureCache;
     if (oldSignatureCache) CFRelease(oldSignatureCache);
+    
+    OSSpinLockUnlock(&_lock);
 }
 
 @end
@@ -130,7 +131,7 @@ static volatile CFDictionaryRef _cache = nil;
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - PSTYESDelegateProxy
 
-@implementation PSTYESDelegateProxy
+@implementation PSTYESDefaultingDelegateProxy
 
 - (void)forwardInvocation:(NSInvocation *)invocation {
     // If method is a BOOL, return YES.

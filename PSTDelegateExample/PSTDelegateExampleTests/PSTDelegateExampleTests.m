@@ -62,6 +62,20 @@
     [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
 }
 
+// Ensure caching works.
+- (void)testThatProxyCanDealWithNilledOutDelegatesCached {
+    [self testThatProxyCanDealWithNilledOutDelegates];
+
+    PSTDelegateProxy *delegateProxy;
+    @autoreleasepool {
+        TestDelegate *delegate = [TestDelegate new];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate];
+    }
+    // At this stage, delegate must be nil
+    XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
+    [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - PSTExampleDelegate
 
