@@ -25,9 +25,9 @@
 // Add this define into your implementation to save the delegate into the delegate proxy.
 // You will also require an internal declaration as follows:
 // @property (nonatomic, strong) id<XXXDelegate> delegateProxy;
-#define PSPDF_DELEGATE_PROXY(type) \
-- (void)setDelegate:(type)delegate { self.delegateProxy = delegate ? (type)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate] : nil; } \
-- (type)delegate { return ((PSPDFDelegateProxy *)self.delegateProxy).delegate; }
+#define PSPDF_DELEGATE_PROXY(protocol) \
+- (void)setDelegate:(type)delegate { self.delegateProxy = delegate ? (id<protocol>)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate confirmingToProtocol:@protocol(protocol)] : nil; } \
+- (id<protocol>)delegate { return ((PSPDFDelegateProxy *)self.delegateProxy).delegate; }
 
 // Forwards calls to a delegate. Uses modern message forwarding with almost no runtime overhead.
 @interface PSTDelegateProxy : NSProxy
@@ -40,6 +40,6 @@
 
 // The internal (weak) delegate.
 @property (nonatomic, weak, readonly) id delegate;
-@property (nonatomic, readonly) Protocol *protocol;
+@property (nonatomic, strong, readonly) Protocol *protocol;
 
 @end

@@ -34,8 +34,7 @@ static volatile CFDictionaryRef _cache = nil;
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - NSObject
 
-- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol*)protocol
-{
+- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol *)protocol {
     if (self) {
         _delegate = delegate;
         _protocol = protocol;
