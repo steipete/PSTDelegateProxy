@@ -34,13 +34,15 @@ static volatile CFDictionaryRef _cache = nil;
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - NSObject
 
-- (id)initWithDelegate:(id)delegate {
+- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol*)protocol
+{
     if (self) {
         _delegate = delegate;
+        _protocol = protocol;
 
         // Ensure we cached all method signatures.
-        if (!_cache || !CFDictionaryGetValueIfPresent(_cache, (__bridge const void *)([delegate class]), NULL)) {
-            [self cacheMethodSignaturesForProtocolsInObject:delegate];
+        if (!_cache || !CFDictionaryGetValueIfPresent(_cache, (__bridge const void *)(protocol), NULL)) {
+            [self cacheMethodSignaturesForProtocol:protocol];
         }
     }
     return self;
@@ -63,12 +65,8 @@ static volatile CFDictionaryRef _cache = nil;
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
     NSMethodSignature *signature = [self.delegate methodSignatureForSelector:sel];
     if (!signature) {
-        // If the delegate is already nil, we still need the method signature to not crash.
+        // If the delegate is nil, we still need the method signature to not crash.
         if (_cache) signature = CFDictionaryGetValue(_cache, sel);
-        if (!signature) {
-            // Worst-case szenario, query all loaded classes for the signature.
-            signature = [self searchAllClassesForSignature:sel];
-        }
     }
     return signature;
 }
@@ -81,7 +79,7 @@ static volatile CFDictionaryRef _cache = nil;
 #pragma mark - Public
 
 - (instancetype)YESDefault {
-    return [[PSTYESDefaultingDelegateProxy alloc] initWithDelegate:self.delegate];
+    return [[PSTYESDefaultingDelegateProxy alloc] initWithDelegate:self.delegate conformingToProtocol:self.protocol];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -106,37 +104,22 @@ static volatile CFDictionaryRef _cache = nil;
     OSSpinLockUnlock(&_lock);
 }
 
-- (void)cacheMethodSignaturesForProtocolsInObject:(id)object {
-    if (!object) return;
-
+- (void)cacheMethodSignaturesForProtocol:(Protocol*)protocol {
     [self lockCacheAndUpdateMutableCopy:^(CFMutableDictionaryRef mutableCache) {
-        // Set this class and all parent classes to be cached.
-        Class objectClass = [object class];
-        do {
-            CFDictionarySetValue(mutableCache, (__bridge const void *)(objectClass), kCFBooleanTrue);
-
-            // We need to cache method signatures for each protocol.
-            unsigned int protocolCount = 0;
-            Protocol *__unsafe_unretained* protocols = class_copyProtocolList([object class], &protocolCount);
-            for (NSUInteger idx = 0; idx < protocolCount; idx++) {
-                [self cacheProtocol:protocols[idx] object:object cache:mutableCache];
-            }
-            free(protocols);
-        }while ((objectClass = class_getSuperclass(objectClass)));
+        [self cacheProtocol:protocol cache:mutableCache];
     }];
 }
 
-- (void)cacheProtocol:(Protocol *)protocol object:(id)object cache:(CFMutableDictionaryRef)cache {
+- (void)cacheProtocol:(Protocol *)protocol cache:(CFMutableDictionaryRef)cache {
     if (!CFDictionaryGetValueIfPresent(cache, (__bridge const void *)(protocol), NULL)) {
         // Set protocol to be cached.
         CFDictionarySetValue(cache, (__bridge const void *)(protocol), kCFBooleanTrue);
 
-        // Get the required method signatures.
         NSUInteger methodCount;
         struct objc_method_description *descriptions = protocol_copyMethodDescriptionList(protocol, NO, YES, &methodCount);
         for (NSUInteger methodIndex = 0; methodIndex < methodCount; methodIndex++) {
             struct objc_method_description description = descriptions[methodIndex];
-            NSMethodSignature *signature = [object methodSignatureForSelector:description.name];
+            NSMethodSignature *signature = [NSMethodSignature signatureWithObjCTypes:description.types];
             CFDictionarySetValue(cache, description.name, (__bridge const void *)(signature));
         }
         free(descriptions);
@@ -145,51 +128,11 @@ static volatile CFDictionaryRef _cache = nil;
         unsigned int inheritedProtocolCount;
         Protocol *__unsafe_unretained* subprotocols = protocol_copyProtocolList(protocol, &inheritedProtocolCount);
         for (NSUInteger idx = 0; idx < inheritedProtocolCount; idx++) {
-            [self cacheProtocol:subprotocols[idx] object:object cache:cache];
+            [self cacheProtocol:subprotocols[idx] cache:cache];
         }
         free(subprotocols);
     }
 }
-
-// Thanks to Mike Ash for the inspiration
-- (NSMethodSignature *)searchAllClassesForSignature:(SEL)sel {
-    int count = objc_getClassList(NULL, 0);
-    Class *classes = (Class *)malloc(sizeof(*classes) * count);
-    objc_getClassList(classes, count);
-
-    NSMethodSignature *signature = nil;
-    for(int i = 0; i < count; i++) {
-        Class c = classes[i];
-        if (class_getClassMethod(c, @selector(methodSignatureForSelector:)) &&
-            class_getClassMethod(c, @selector(instanceMethodSignatureForSelector:))) {
-            NSMethodSignature *thisSig = [c methodSignatureForSelector:sel];
-            if (!signature)
-                signature = thisSig;
-            else if(signature && thisSig && ![signature isEqual:thisSig]) {
-                signature = nil;
-                break;
-            }
-
-            thisSig = [c instanceMethodSignatureForSelector:sel];
-            if (!signature)
-                signature = thisSig;
-            else if(signature && thisSig && ![signature isEqual: thisSig]) {
-                signature = nil;
-                break;
-            }
-        }
-    }
-    free(classes);
-
-    // Save cached signature.
-    if (signature) {
-        [self lockCacheAndUpdateMutableCopy:^(CFMutableDictionaryRef mutableCache) {
-            CFDictionarySetValue(mutableCache, sel, (__bridge const void *)(signature));
-        }];
-    }
-    return signature;
-}
-
 @end
 
 ///////////////////////////////////////////////////////////////////////////////////////////
