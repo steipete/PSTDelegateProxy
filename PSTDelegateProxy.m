@@ -48,7 +48,7 @@ static volatile CFDictionaryRef _cache = nil;
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:@"<%@: %p delegate:%@>", self.class, self, self.delegate];
+    return [NSString stringWithFormat:@"<%@: %p delegate:%@ protocol:%@>", self.class, self, self.delegate, self.protocol];
 }
 
 - (BOOL)respondsToSelector:(SEL)selector {
