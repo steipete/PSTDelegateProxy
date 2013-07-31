@@ -28,7 +28,7 @@
 @interface PSTYESDefaultingDelegateProxy : PSTDelegateProxy @end
 
 @implementation PSTDelegateProxy {
-    CFDictionaryRef _signatureCache;
+    CFDictionaryRef _signatures;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,6 @@
     if (self) {
         _delegate = delegate;
         _protocol = protocol;
-        _signatureCache = [self methodSignaturesForProtocol:protocol];
     }
     return self;
 }
@@ -58,12 +57,17 @@
 }
 
 // Regular message forwarding continues if delegate doesn't respond to selector or is nil.
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
-    return [_delegate methodSignatureForSelector:sel] ?: (id)CFDictionaryGetValue(_signatureCache, sel);
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)selector {
+    NSMethodSignature *signature = [_delegate methodSignatureForSelector:selector];
+    if (!signature) {
+        if (!_signatures) _signatures = [self methodSignaturesForProtocol:_protocol];
+        signature = CFDictionaryGetValue(_signatures, selector);
+    }
+    return signature;
 }
 
 - (void)forwardInvocation:(NSInvocation *)invocation {
-    // ignore
+    // Ignore built invocation.
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
