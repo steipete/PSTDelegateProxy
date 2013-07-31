@@ -39,13 +39,13 @@
 - (void)testDelegateBeingCalled {
     _delegateString = nil;
 
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
     [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
     XCTAssertEqualObjects(_delegateString, @"Test");
 }
 
 - (void)testDelegateBeingCalledWithReturnValue {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
 
     BOOL delegateReturnNO = [(id<PSTExampleDelegate>)delegateProxy exampleDelegateThatReturnsBOOL];
     XCTAssertFalse(delegateReturnNO, @"Must be false.");
@@ -55,14 +55,14 @@
 }
 
 - (void)testDelegateBeingCalledWithReturnValueThatIsImplemented {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
 
     BOOL delegateReturnYES = [(id<PSTExampleDelegate>)delegateProxy exampleDelegateThatReturnsBOOLAndIsImplemented];
     XCTAssertTrue(delegateReturnYES, @"Must be true.");
 }
 
 - (void)testRespondsToSelectorForwarding {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
     XCTAssertTrue([delegateProxy respondsToSelector:@selector(exampleDelegateCalledWithString:)], @"Must be true.");
     XCTAssertFalse([delegateProxy respondsToSelector:@selector(exampleDelegateThatReturnsBOOL)], @"Must be false.");
 }
@@ -71,7 +71,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         TestDelegate *delegate = [TestDelegate new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate)];
     }
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
@@ -82,7 +82,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         TestDelegate *delegate = [TestDelegate new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate)];
     }
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
@@ -103,7 +103,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         TestDelegate *delegate = [TestDelegate new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate)];
     }
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
@@ -114,7 +114,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(PSTExampleDelegate)];
     }
 
     // At this stage, delegate must be nil
@@ -129,7 +129,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(PSTExampleDelegate)];
 
         [(id<PSTExampleDelegate>)delegateProxy delegateProperty];
     }
@@ -143,7 +143,7 @@
 }
 
 - (void)testNeverCachedProperty {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:nil];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:nil conformingToProtocol:@protocol(NeverCachedProtocol)];
 
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");

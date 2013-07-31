@@ -33,12 +33,13 @@
 @interface PSTDelegateProxy : NSProxy
 
 // Designated initializer. `delegate` can be nil.
-- (id)initWithDelegate:(id)delegate;
+- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol*)protocol;
 
 // Returns an object that will return YES for messages that return a BOOL if they are not implemented.
 - (instancetype)YESDefault;
 
 // The internal (weak) delegate.
 @property (nonatomic, weak, readonly) id delegate;
+@property (nonatomic, readonly) Protocol *protocol;
 
 @end
