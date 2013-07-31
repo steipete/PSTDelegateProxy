@@ -19,12 +19,17 @@
 @end
 
 @protocol ExtendedDelegate <PSTExampleDelegate>
-
 @optional
-
 - (void)testCall;
-
 @end
+
+@protocol NeverCachedProtocol <NSObject>
+@optional
+- (BOOL)neverCachedCall;
+@end
+@interface NeverCachedProtocolImpl : NSObject <NeverCachedProtocol> @end
+@implementation NeverCachedProtocolImpl @end
+
 
 @interface ExtendedDelegateImpl : NSObject <ExtendedDelegate> @end
 @implementation ExtendedDelegateImpl @end
@@ -134,6 +139,17 @@
 
     // Properties are covered with querying protocol_copyMethodDescriptionList.
     BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    XCTAssertTrue(returnValueTrue, @"return should be true");
+}
+
+- (void)testNeverCachedProperty {
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:nil];
+
+    // At this stage, delegate must be nil
+    XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
+
+    // Properties are covered with querying protocol_copyMethodDescriptionList.
+    BOOL returnValueTrue = [(id<NeverCachedProtocol>)delegateProxy.YESDefault neverCachedCall];
     XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
