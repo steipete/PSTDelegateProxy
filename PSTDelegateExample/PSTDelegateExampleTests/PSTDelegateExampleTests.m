@@ -157,9 +157,12 @@
 }
 
 - (void)testRequiredDelegateCall {
-    ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(ExtendedDelegate)];
-
+    PSTDelegateProxy *delegateProxy;
+    @autoreleasepool {
+        ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(ExtendedDelegate)];
+        [(id<ExtendedDelegate>)delegateProxy requiredCall];
+    }
     [(id<ExtendedDelegate>)delegateProxy requiredCall];
 }
 
