@@ -19,6 +19,7 @@
 @end
 
 @protocol ExtendedDelegate <PSTExampleDelegate>
+- (void)requiredCall;
 @optional
 - (void)testCall;
 @end
@@ -32,7 +33,9 @@
 
 
 @interface ExtendedDelegateImpl : NSObject <ExtendedDelegate> @end
-@implementation ExtendedDelegateImpl @end
+@implementation ExtendedDelegateImpl
+- (void)requiredCall {}
+@end
 
 @implementation PSTDelegateExampleTests
 
@@ -151,6 +154,13 @@
     // Properties are covered with querying protocol_copyMethodDescriptionList.
     BOOL returnValueTrue = [(id<NeverCachedProtocol>)delegateProxy.YESDefault neverCachedCall];
     XCTAssertTrue(returnValueTrue, @"return should be true");
+}
+
+- (void)testRequiredDelegateCall {
+    ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(ExtendedDelegate)];
+
+    [(id<ExtendedDelegate>)delegateProxy requiredCall];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
