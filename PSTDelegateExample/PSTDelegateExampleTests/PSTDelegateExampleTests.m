@@ -163,6 +163,7 @@
         delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(ExtendedDelegate)];
         [(id<ExtendedDelegate>)delegateProxy requiredCall];
     }
+    // delegate is nil by now, still needs to work.
     [(id<ExtendedDelegate>)delegateProxy requiredCall];
 }
 
