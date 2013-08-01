@@ -25,9 +25,11 @@
 // Add this define into your implementation to save the delegate into the delegate proxy.
 // You will also require an internal declaration as follows:
 // @property (nonatomic, strong) id<XXXDelegate> delegateProxy;
-#define PST_DELEGATE_PROXY(protocolname) \
-- (void)setDelegate:(id<protocolname>)delegate { self.delegateProxy = delegate ? (id<protocolname>)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(protocolname) defaultReturnValue:nil] : nil; } \
-- (id<protocolname>)delegate { return ((PSPDFDelegateProxy *)self.delegateProxy).delegate; }
+#define PST_DELEGATE_PROXY_CUSTOM(protocolname, GETTER, SETTER) \
+- (id<protocolname>)GETTER { return ((PSPDFDelegateProxy *)self.GETTER##Proxy).delegate; } \
+- (void)SETTER:(id<protocolname>)delegate { self.GETTER##Proxy = delegate ? (id<protocolname>)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(protocolname) defaultReturnValue:nil] : nil; }
+
+#define PST_DELEGATE_PROXY(protocolname) PST_DELEGATE_PROXY_CUSTOM(protocolname, delegate, setDelegate)
 
 // Forwards calls to a delegate. Uses modern message forwarding with almost no runtime overhead.
 // Works for optional and requred methods. Won't work for class methods.
