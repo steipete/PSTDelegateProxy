@@ -25,8 +25,6 @@
 #import <objc/runtime.h>
 #import <libkern/OSAtomic.h>
 
-@interface PSTYESDefaultingDelegateProxy : PSTDelegateProxy @end
-
 @implementation PSTDelegateProxy {
     CFDictionaryRef _signatures;
 }
@@ -34,11 +32,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - NSObject
 
-- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol *)protocol {
+- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol *)protocol defaultReturnValue:(NSValue *)returnValue {
     NSParameterAssert(protocol);
+    NSParameterAssert(returnValue == nil || [returnValue isKindOfClass:NSValue.class]);
     if (self) {
         _delegate = delegate;
         _protocol = protocol;
+        _defaultReturnValue = returnValue;
     }
     return self;
 }
@@ -67,14 +67,23 @@
 }
 
 - (void)forwardInvocation:(NSInvocation *)invocation {
-    // Ignore built invocation.
+    // Set a default return type if set.
+    if (_defaultReturnValue && strcmp(_defaultReturnValue.objCType, invocation.methodSignature.methodReturnType) == 0) {
+        char buffer[invocation.methodSignature.methodReturnLength];
+        [_defaultReturnValue getValue:buffer];
+        [invocation setReturnValue:&buffer];
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Public
 
-- (instancetype)YESDefault {
-    return [[PSTYESDefaultingDelegateProxy alloc] initWithDelegate:self.delegate conformingToProtocol:self.protocol];
+- (instancetype)copyThatDefaultsTo:(NSValue *)defaultValue {
+    return [[self.class alloc] initWithDelegate:_delegate conformingToProtocol:_protocol defaultReturnValue:defaultValue];
+}
+
+- (instancetype)copyThatDefaultsToYES {
+    return [self copyThatDefaultsTo:@YES];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -121,19 +130,4 @@ static OSSpinLock _lock = OS_SPINLOCK_INIT;
     }
     free(inheritedProtocols);
 }
-@end
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - PSTYESDelegateProxy
-
-@implementation PSTYESDefaultingDelegateProxy
-
-- (void)forwardInvocation:(NSInvocation *)invocation {
-    // If method is a BOOL, return YES.
-    if (strncmp(invocation.methodSignature.methodReturnType, @encode(BOOL), 1) == 0) {
-        BOOL retValue = YES;
-        [invocation setReturnValue:&retValue];
-    }
-}
-
 @end

@@ -26,22 +26,29 @@
 // You will also require an internal declaration as follows:
 // @property (nonatomic, strong) id<XXXDelegate> delegateProxy;
 #define PST_DELEGATE_PROXY(protocolname) \
-- (void)setDelegate:(id<protocolname>)delegate { self.delegateProxy = delegate ? (id<protocolname>)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(protocolname)] : nil; } \
+- (void)setDelegate:(id<protocolname>)delegate { self.delegateProxy = delegate ? (id<protocolname>)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(protocolname) defaultReturnValue:nil] : nil; } \
 - (id<protocolname>)delegate { return ((PSPDFDelegateProxy *)self.delegateProxy).delegate; }
 
 // Forwards calls to a delegate. Uses modern message forwarding with almost no runtime overhead.
 @interface PSTDelegateProxy : NSProxy
 
 // Designated initializer. `delegate` can be nil.
-- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol*)protocol;
+// `returnValue` will unbox on method signatures that return a primitive number (e.g. @YES)
+// Method signatures that don't match the unboxed type in `returnValue` will be ignored.
+- (id)initWithDelegate:(id)delegate conformingToProtocol:(Protocol *)protocol defaultReturnValue:(NSValue *)returnValue;
 
-// Returns an object that will return YES for messages that return a BOOL if they are not implemented.
-- (instancetype)YESDefault;
+// Returns an object that will return `defaultValue` for methods that return an primitive value type.
+// Method signatures that don't match the unboxed type in `returnValue` will be ignored.
+- (instancetype)copyThatDefaultsTo:(NSValue *)defaultValue;
+- (instancetype)copyThatDefaultsToYES;
 
 // The internal (weak) delegate.
 @property (nonatomic, weak, readonly) id delegate;
 
 // The property we allow calling to.
 @property (nonatomic, strong, readonly) Protocol *protocol;
+
+// The default boxed primitive return value if method isn't implemented. Defaults to nil.
+@property (nonatomic, strong, readonly) NSValue *defaultReturnValue;
 
 @end

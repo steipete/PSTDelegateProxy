@@ -42,30 +42,30 @@
 - (void)testDelegateBeingCalled {
     _delegateString = nil;
 
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
     [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
     XCTAssertEqualObjects(_delegateString, @"Test");
 }
 
 - (void)testDelegateBeingCalledWithReturnValue {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
 
     BOOL delegateReturnNO = [(id<PSTExampleDelegate>)delegateProxy exampleDelegateThatReturnsBOOL];
     XCTAssertFalse(delegateReturnNO, @"Must be false.");
 
-    BOOL delegateReturnYES = [(id<PSTExampleDelegate>)(delegateProxy.YESDefault) exampleDelegateThatReturnsBOOL];
+    BOOL delegateReturnYES = [(id<PSTExampleDelegate>)(delegateProxy.copyThatDefaultsToYES) exampleDelegateThatReturnsBOOL];
     XCTAssertTrue(delegateReturnYES, @"Must be true.");
 }
 
 - (void)testDelegateBeingCalledWithReturnValueThatIsImplemented {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
 
     BOOL delegateReturnYES = [(id<PSTExampleDelegate>)delegateProxy exampleDelegateThatReturnsBOOLAndIsImplemented];
     XCTAssertTrue(delegateReturnYES, @"Must be true.");
 }
 
 - (void)testRespondsToSelectorForwarding {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate)];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
     XCTAssertTrue([delegateProxy respondsToSelector:@selector(exampleDelegateCalledWithString:)], @"Must be true.");
     XCTAssertFalse([delegateProxy respondsToSelector:@selector(exampleDelegateThatReturnsBOOL)], @"Must be false.");
 }
@@ -74,7 +74,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         TestDelegate *delegate = [TestDelegate new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate)];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
     }
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
@@ -85,7 +85,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         TestDelegate *delegate = [TestDelegate new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate)];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
     }
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
@@ -95,7 +95,7 @@
     XCTAssertFalse(returnValue, @"return should be false");
 
     // Most important test, chec that this defaults to YES.
-    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.copyThatDefaultsToYES exampleDelegateThatReturnsBOOL];
     XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
@@ -106,7 +106,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         TestDelegate *delegate = [TestDelegate new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate)];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
     }
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
@@ -117,14 +117,14 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(PSTExampleDelegate)];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
     }
 
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
 
 
-    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.copyThatDefaultsToYES exampleDelegateThatReturnsBOOL];
     XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
@@ -132,7 +132,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(PSTExampleDelegate)];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
 
         [(id<PSTExampleDelegate>)delegateProxy delegateProperty];
     }
@@ -141,18 +141,18 @@
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
 
     // Properties are covered with querying protocol_copyMethodDescriptionList.
-    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.YESDefault exampleDelegateThatReturnsBOOL];
+    BOOL returnValueTrue = [(id<PSTExampleDelegate>)delegateProxy.copyThatDefaultsToYES exampleDelegateThatReturnsBOOL];
     XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
 - (void)testNeverCachedProperty {
-    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:nil conformingToProtocol:@protocol(NeverCachedProtocol)];
+    PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:nil conformingToProtocol:@protocol(NeverCachedProtocol) defaultReturnValue:nil];
 
     // At this stage, delegate must be nil
     XCTAssertTrue(delegateProxy.delegate == nil, @"Delegate must be nil");
 
     // Properties are covered with querying protocol_copyMethodDescriptionList.
-    BOOL returnValueTrue = [(id<NeverCachedProtocol>)delegateProxy.YESDefault neverCachedCall];
+    BOOL returnValueTrue = [(id<NeverCachedProtocol>)delegateProxy.copyThatDefaultsToYES neverCachedCall];
     XCTAssertTrue(returnValueTrue, @"return should be true");
 }
 
@@ -160,7 +160,7 @@
     PSTDelegateProxy *delegateProxy;
     @autoreleasepool {
         ExtendedDelegateImpl *impl = [ExtendedDelegateImpl new];
-        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(ExtendedDelegate)];
+        delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:impl conformingToProtocol:@protocol(ExtendedDelegate) defaultReturnValue:nil];
         [(id<ExtendedDelegate>)delegateProxy requiredCall];
     }
     // delegate is nil by now, still needs to work.
