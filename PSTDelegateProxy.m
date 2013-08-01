@@ -110,9 +110,9 @@ static OSSpinLock _lock = OS_SPINLOCK_INIT;
 }
 
 - (void)methodSignaturesForProtocol:(Protocol *)protocol inDictionary:(CFMutableDictionaryRef)cache {
-    void (^enumerate)(BOOL, BOOL) = ^(BOOL isRequired, BOOL isInstance) {
+    void (^enumerateRequiredMethods)(BOOL) = ^(BOOL isRequired) {
         unsigned int methodCount;
-        struct objc_method_description *descr = protocol_copyMethodDescriptionList(protocol, isRequired, isInstance, &methodCount);
+        struct objc_method_description *descr = protocol_copyMethodDescriptionList(protocol, isRequired, YES, &methodCount);
         for (NSUInteger idx = 0; idx < methodCount; idx++) {
             NSMethodSignature *signature = [NSMethodSignature signatureWithObjCTypes:descr[idx].types];
             CFDictionarySetValue(cache, descr[idx].name, (__bridge const void *)(signature));
@@ -120,7 +120,7 @@ static OSSpinLock _lock = OS_SPINLOCK_INIT;
         free(descr);
     };
     // We need to enumerate all possible combinations here.
-    enumerate(NO, NO); enumerate(YES, NO); enumerate(NO,YES); enumerate(YES, YES);
+    enumerateRequiredMethods(NO); enumerateRequiredMethods(YES);
 
     // There might be sub-protocols we need to catch as well.
     unsigned int inheritedProtocolCount;

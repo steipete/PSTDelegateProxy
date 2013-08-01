@@ -30,6 +30,7 @@
 - (id<protocolname>)delegate { return ((PSPDFDelegateProxy *)self.delegateProxy).delegate; }
 
 // Forwards calls to a delegate. Uses modern message forwarding with almost no runtime overhead.
+// Works for optional and requred methods. Won't work for class methods.
 @interface PSTDelegateProxy : NSProxy
 
 // Designated initializer. `delegate` can be nil.
