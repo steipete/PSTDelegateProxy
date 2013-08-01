@@ -119,7 +119,7 @@ static OSSpinLock _lock = OS_SPINLOCK_INIT;
         }
         free(descr);
     };
-    // We need to enumerate all possible combinations here.
+    // We need to enumerate both required and optional protocol methods.
     enumerateRequiredMethods(NO); enumerateRequiredMethods(YES);
 
     // There might be sub-protocols we need to catch as well.
