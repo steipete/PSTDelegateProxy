@@ -26,8 +26,8 @@
 // You will also require an internal declaration as follows:
 // @property (nonatomic, strong) id<XXXDelegate> delegateProxy;
 #define PST_DELEGATE_PROXY_CUSTOM(protocolname, GETTER, SETTER) \
-- (id<protocolname>)GETTER { return ((PSPDFDelegateProxy *)self.GETTER##Proxy).delegate; } \
-- (void)SETTER:(id<protocolname>)delegate { self.GETTER##Proxy = delegate ? (id<protocolname>)[[PSPDFDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(protocolname) defaultReturnValue:nil] : nil; }
+- (id<protocolname>)GETTER { return ((PSTDelegateProxy *)self.GETTER##Proxy).delegate; } \
+- (void)SETTER:(id<protocolname>)delegate { self.GETTER##Proxy = delegate ? (id<protocolname>)[[PSTDelegateProxy alloc] initWithDelegate:delegate conformingToProtocol:@protocol(protocolname) defaultReturnValue:nil] : nil; }
 
 #define PST_DELEGATE_PROXY(protocolname) PST_DELEGATE_PROXY_CUSTOM(protocolname, delegate, setDelegate)
 
