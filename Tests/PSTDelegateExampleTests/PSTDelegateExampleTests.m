@@ -46,7 +46,7 @@
     [(id<PSTExampleDelegate>)delegateProxy exampleDelegateCalledWithString:@"Test"];
     XCTAssertEqualObjects(_delegateString, @"Test");
 }
-`
+
 - (void)testDelegateBeingCalledWithReturnValue {
     PSTDelegateProxy *delegateProxy = [[PSTDelegateProxy alloc] initWithDelegate:self conformingToProtocol:@protocol(PSTExampleDelegate) defaultReturnValue:nil];
 
